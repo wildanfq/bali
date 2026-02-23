@@ -1,0 +1,2 @@
+0
+88 3539622 1771875011069032300 800d1618ba3f5e0bb2abd7ec6ab9a58f 0 /media/wildan-fq/Project/nusa-os/src/arch/trap.S

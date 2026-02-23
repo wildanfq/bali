@@ -1,0 +1,9 @@
+using sysbus
+mach create
+
+machine LoadPlatformDescription @tools/renode_1.16.1-dotnet_portable/platforms/cpus/riscv_virt.repl
+
+sysbus LoadELF @zig-out/bin/nusa-os.elf
+
+showAnalyzer sysbus.uart0
+start
