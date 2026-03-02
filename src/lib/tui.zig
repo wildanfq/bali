@@ -4,10 +4,10 @@ pub const CLEAR = "\x1B[2J\x1B[H";
 pub const HIDE_CURSOR = "\x1B[?25l";
 pub const SHOW_CURSOR = "\x1B[?25h";
 
-pub const CLR_PRIMARY = "\x1B[38;5;81m"; // Blue
-pub const CLR_ERROR = "\x1B[38;5;203m"; // Red
-pub const CLR_DIM = "\x1B[38;5;242m"; // Gray
-pub const CLR_TEXT = "\x1B[38;5;253m"; // White
+pub const CLR_PRIMARY = "\x1B[38;5;81m";
+pub const CLR_ERROR = "\x1B[38;5;203m";
+pub const CLR_DIM = "\x1B[38;5;242m";
+pub const CLR_TEXT = "\x1B[38;5;253m";
 pub const RESET = "\x1B[0m";
 
 pub const FG_WHITE = CLR_TEXT;

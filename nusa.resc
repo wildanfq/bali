@@ -1,20 +1,14 @@
 using sysbus
 mach create "bali"
 
-# 1. Gunakan variabel untuk tipe CPU agar Zicsr aktif
 $cpuType = "rv32imac_zicsr"
 
-# 2. Load platform dasar
 machine LoadPlatformDescription @tools/renode_1.16.1-dotnet_portable/platforms/cpus/riscv_virt.repl
 
-# 3. PERBAIKAN SHUTDOWN (Sintaks 2026 yang disederhanakan)
-# Kita buat syscon dengan script satu baris (one-liner) tanpa karakter backslash
 machine LoadPlatformDescriptionFromString "syscon: Python.PythonPeripheral @ sysbus 0x100000 { size: 0x4; script: \"if request.isWrite and request.value == 0x5555: print('Nusa OS: Powering Off...'); self.Machine.Pause()\" }"
 
-# 4. Load binary kernel
 sysbus LoadELF @zig-out/bin/bali.elf
 
-# 5. Konfigurasi Terminal
 showAnalyzer sysbus.uart0
 
 # Mulai simulasi

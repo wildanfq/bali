@@ -94,9 +94,3 @@ Gunakan skrip kontrol untuk memulai sesi riset:
 ```
 
 ---
-
-## **Kontribusi & Lisensi**
-
-NusaOS adalah proyek **Open Source**. Kami mengundang peneliti dan pelajar untuk melakukan *fork*, mengeksplorasi manajemen memori, atau menambahkan penjadwalan proses (*multitasking*) sebagai bagian dari tugas akhir atau riset pribadi.
-
----
