@@ -8,16 +8,12 @@ zig build
 
 # Pilihan Emulator
 case "$1" in
-    --debug)
-        echo "Menjalankan QEMU Debug..."
-        $QEMU -nographic -machine virt -bios none -kernel zig-out/bin/nusa-os.elf -d int,cpu -D log.txt
-        ;;
     --renode)
         echo "Menjalankan Renode..."
         $RENODE $RESC_FILE
         ;;
-    *)
-        echo "Menjalankan QEMU Normal..."
-        $QEMU -nographic -machine virt -bios none -kernel zig-out/bin/nusa-os.elf
+    --qemu)
+        echo "Menjalankan Qemu..."
+        $QEMU -nographic -machine virt -bios none -kernel zig-out/bin/bali.elf
         ;;
 esac

@@ -1,85 +1,102 @@
-**NusaOS** adalah proyek sistem operasi *open-source* berbasis **Microkernel** yang dibangun dari nol menggunakan bahasa pemrograman **Zig (v0.16.0)**. NusaOS dirancang sebagai solusi *bare-metal* yang sangat ringan, cepat, dan efisien, khusus dioptimalkan untuk perangkat IoT modern yang berbasis arsitektur **RISC-V (32-bit & 64-bit)**.
-
-Visi kami adalah menyediakan sistem operasi minimalis yang memberikan kendali penuh atas perangkat keras tanpa beban *library* yang berat, menjadikannya pilihan ideal untuk sistem kontrol industri, perangkat sensor cerdas, dan eksperimen sistem tertanam (*embedded systems*).
+**BALI** adalah proyek sistem operasi eksperimental berbasis **Microkernel** yang dibangun dari nol (*from scratch*) menggunakan bahasa pemrograman **Zig (v0.16.0)**. Proyek ini dirancang khusus sebagai materi penelitian dan pendidikan bagi pengembang yang ingin memahami mekanisme internal sistem operasi di atas arsitektur **RISC-V (RV32/RV64)** tanpa kompleksitas *legacy* dari sistem operasi besar.
 
 ---
 
-## **Dukungan Emulator**
+## **Tujuan Penelitian & Pendidikan**
 
-NusaOS dapat dijalankan dan diuji menggunakan emulator RISC-V terkemuka berikut:
+NusaOS berfokus pada visualisasi konsep-konsep inti sistem operasi:
 
-* **QEMU (Quick Emulator):** Emulator *open-source* dan virtualizer yang sangat cepat, sering digunakan untuk emulasi sistem secara *full-system*.
-* Situs Resmi: [https://www.qemu.org/](https://www.qemu.org/)
-
-
-* **Renode:** *Framework* pengembangan sistem tertanam yang memungkinkan simulasi jaringan perangkat keras dan *debugging* yang presisi.
-* Situs Resmi: [https://renode.io/](https://renode.io/)
+1. **Bare-Metal Execution**: Memahami transisi dari *Assembly boot code* ke *High-level language runtime*.
+2. **Memory Mapping**: Demonstrasi penggunaan *Linker Script* dalam mengatur tata letak kernel di memori fisik.
+3. **Interrupt & Exception Handling**: Implementasi *Trap Vector* untuk menangani instruksi ilegal atau interupsi eksternal.
+4. **Hardware Abstraction Layer (HAL)**: Studi kasus komunikasi serial melalui UART (Universal Asynchronous Receiver-Transmitter).
+5. **Efficiency over Complexity**: Menunjukkan bagaimana OS fungsional dapat dibangun dengan *binary footprint* yang sangat kecil (<10 KB).
 
 ---
 
-## **Struktur Proyek**
+## **Arsitektur Sistem**
 
-Arsitektur NusaOS menggunakan prinsip modularitas yang ketat untuk memudahkan pengembang dalam melakukan *porting* ke berbagai perangkat keras.
+NusaOS mengadopsi struktur modular untuk memisahkan logika perangkat keras dengan logika aplikasi:
 
 ```text
-nusa_os/
-├── build.zig             # Pusat konfigurasi kompilasi modul
-├── run.sh                # Skrip otomatis Build & Run (QEMU/Renode)
-├── nusa.resc             # Konfigurasi emulator Renode
-├── tools/                # Folder dependensi emulator
-├── src/
-│   ├── linker.ld         # Peta alokasi memori sistem
-│   ├── arch/             # Spesifik CPU (Assembly)
-│   ├── hal/              # Hardware Abstraction Layer (Drivers)
-│   ├── kernel/           # Logika Utama (Microkernel Core)
-│   └── lib/              # User-space Libraries
+src/
+├── arch/riscv/
+│   ├── boot.S       # Entry point: Inisialisasi stack & registrasi trap
+│   └── trap.S       # Low-level trap handler (konteks save/restore)
+├── drivers/
+│   └── uart.zig     # Driver komunikasi serial (polling/MMIO)
+├── lib/
+│   └── tui.zig      # Library visual: ANSI escape codes & pembersihan layar
+├── kernel/
+│   ├── main.zig     # Kernel entry (kmain): Inisialisasi sistem & delay loop
+│   └── panic.zig    # Penanganan kesalahan fatal (Kernel Panic)
+└── user/
+    ├── shell.zig    # Command Line Interface interaktif
+    ├── editor.zig   # Implementasi editor teks berbasis buffer
+    └── viewer.zig   # Visualisasi algoritma (Digital Rain/Starfield)
 
 ```
 
 ---
 
-## **Penggunaan**
+## **Alur Eksekusi (Boot Sequence)**
 
-### Persyaratan
+Untuk bahan riset, berikut adalah urutan operasi saat daya diberikan ke CPU:
 
-* **Zig Compiler v0.16.0**
-* **QEMU System RISC-V**
-* **Renode (Portable/Installed)**
+1. **Reset Vector**: CPU memulai eksekusi pada alamat tetap (biasanya `0x80000000`).
+2. **Assembly Bootstrap (`boot.S`)**:
+* Menonaktifkan interupsi global.
+* Menyiapkan *Stack Pointer* (`sp`) untuk setiap *hart* (CPU core).
+* Mendaftarkan alamat fungsi `trap_handler` ke register sistem RISC-V (`mtvec`).
+* Melompat ke fungsi `kmain` di Zig.
 
-### Perintah Build & Run
 
-NusaOS menyediakan skrip otomatis `./run.sh` untuk mempercepat alur kerja:
+3. **Kernel Initialization (`main.zig`)**:
+* Inisialisasi driver UART untuk *output* diagnostik.
+* Verifikasi integritas sistem melalui pesan *splash screen*.
 
-* **Jalankan via QEMU (Normal):**
+
+4. **Handover**: Kernel menyerahkan kontrol penuh ke `shell.run()` sebagai *user-interface* utama.
+
+---
+
+## **Fitur Penelitian yang Tersedia**
+
+| Fitur | Deskripsi Teknis | File Terkait |
+| --- | --- | --- |
+| **Trap Handling** | Menangkap instruksi ilegal & mencetak status register. | `trap.S`, `main.zig` |
+| **MMIO Driver** | Akses langsung ke register UART pada alamat `0x10000000`. | `drivers/uart.zig` |
+| **TUI Engine** | Manipulasi terminal menggunakan *VT100 Escape Sequences*. | `lib/tui.zig` |
+| **PRNG Algorithm** | Implementasi Xorshift32 untuk simulasi acak tanpa library standar. | `user/viewer.zig` |
+| **Power Mgmt** | Implementasi instruksi `wfi` (Wait For Interrupt) untuk efisiensi daya. | `drivers/uart.zig` |
+
+---
+
+## **Ekosistem Pengembangan**
+
+### **Alat Bantu (Toolchain)**
+
+* **Compiler**: Zig 0.16.0 (Target: `riscv32-freestanding-none`).
+* **Linker**: GNU Linker via Zig (Script: `src/linker.ld`).
+* **Simulator**:
+* **Renode**: Digunakan untuk simulasi periferal yang presisi (seperti sensor).
+* **QEMU**: Digunakan untuk pengujian kecepatan instruksi CPU.
+
+
+
+### **Cara Menjalankan untuk Eksperimen**
+
+Gunakan skrip kontrol untuk memulai sesi riset:
+
 ```bash
-./run.sh
-
-```
-
-* **Jalankan via QEMU (Debug Mode):**
-```bash
-./run.sh --debug
-
-```
-
-* **Jalankan via Renode (Emulator):**
-```bash
-./run.sh --renode
+./run.sh --renode   # Rekomendasi: Gunakan ini untuk melihat log periferal mendalam
 
 ```
 
 ---
 
-## **Cara Kerja "Di Balik Layar"**
+## **Kontribusi & Lisensi**
 
-1. **Bootstrapping**: CPU menjalankan instruksi di `boot.S`, menyiapkan *Stack Pointer* agar fungsi-fungsi Zig dapat berjalan di memori RAM.
-2. **Kernel Initialization**: Kernel mengambil alih kendali di `kmain()`, mendaftarkan `trap_vector` ke CPU untuk keamanan sistem.
-3. **Shell Ready**: Kendali diberikan ke `shell.run()`, di mana sistem melakukan *polling* pada port UART secara *real-time*.
-4. **Interaction Loop**: Input dikumpulkan di `buf`, dan tombol `Enter` memicu `execute()` untuk menjalankan perintah.
-5. **Fault Handling**: Sistem dilengkapi dengan *Trap Handler*. Jika terjadi kesalahan (misal: *divide by zero*), sistem akan menghentikan eksekusi dan mencetak error, menjaga agar tidak terjadi *undefined behavior*.
-
----
-
-*Dibuat dengan semangat open-source untuk kemandirian teknologi IoT berbasis RISC-V.*
+NusaOS adalah proyek **Open Source**. Kami mengundang peneliti dan pelajar untuk melakukan *fork*, mengeksplorasi manajemen memori, atau menambahkan penjadwalan proses (*multitasking*) sebagai bagian dari tugas akhir atau riset pribadi.
 
 ---

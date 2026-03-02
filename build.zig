@@ -6,30 +6,38 @@ pub fn build(b: *std.Build) void {
         .os_tag = .freestanding,
         .abi = .none,
     });
+
     const optimize = b.standardOptimizeOption(.{ .preferred_optimize_mode = .ReleaseSmall });
 
-    const hal_mod = b.addModule("hal", .{ .root_source_file = b.path("src/hal/uart.zig") });
-    const lib_mod = b.addModule("lib", .{ .root_source_file = b.path("src/lib/shell.zig") });
+    // Definisi Modul
+    const drivers = b.addModule("drivers", .{ .root_source_file = b.path("src/drivers/uart.zig") });
+    const lib = b.addModule("lib", .{ .root_source_file = b.path("src/lib/tui.zig") });
+    const user = b.addModule("user", .{ .root_source_file = b.path("src/user/shell.zig") });
 
-    lib_mod.addImport("hal", hal_mod);
+    // Dependency antar Modul
+    lib.addImport("drivers", drivers);
+    user.addImport("drivers", drivers);
+    user.addImport("lib", lib);
 
-    const kernel_mod = b.createModule(.{
-        .root_source_file = b.path("src/kernel/main.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    kernel_mod.addImport("hal", hal_mod);
-    kernel_mod.addImport("lib", lib_mod);
-
-    kernel_mod.addAssemblyFile(b.path("src/arch/boot.S"));
-    kernel_mod.addAssemblyFile(b.path("src/arch/trap.S"));
-
+    // Konfigurasi Kernel Elf
     const kernel = b.addExecutable(.{
-        .name = "nusa-os.elf",
-        .root_module = kernel_mod,
+        .name = "bali.elf",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/kernel/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
+    // Import modul ke dalam Kernel
+    kernel.root_module.addImport("drivers", drivers);
+    kernel.root_module.addImport("lib", lib);
+    kernel.root_module.addImport("user", user);
+
+    // File Low-Level & Linker
+    kernel.root_module.addAssemblyFile(b.path("src/arch/riscv32/boot.S"));
+    kernel.root_module.addAssemblyFile(b.path("src/arch/riscv32/trap.S"));
     kernel.setLinkerScript(b.path("src/linker.ld"));
+
     b.installArtifact(kernel);
 }
